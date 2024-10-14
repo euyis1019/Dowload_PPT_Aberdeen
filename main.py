@@ -80,17 +80,17 @@ try:
     username, password = get_credentials()
 
     # 登录
-    page.get("https://abdn.blackboard.com/ultra/courses/_66719_1/outline")
+    page.get("https://abdn.blackboard.com/ultra/courses/_66734_1/outline")
     page.wait.eles_loaded("#user_id")
     page.ele("#user_id").input(username)
     page.ele("#password").input(password)
     page.ele("#entry-login").click()
 
     # 等待页面加载完成
-    page.wait.eles_loaded("#folder-title-_4389078_1", timeout=10)
+    page.wait.eles_loaded("xpath://button[matches(@id, 'folder-title-_.*_1') and contains(text(), 'Lectures')]", timeout=10)
     print("Lectureschuxinale")
     # 点击 "Lectures" 按钮
-    if not wait_and_click(page, "#folder-title-_4389078_1"):
+    if not wait_and_click(page, '#folder-title-_4390020_1'):
         print("无法点击 Lectures 按钮")
     # 点击所有 "Week" 按钮
     page.wait.eles_loaded("xpath://button[contains(@id, 'folder-title-') and starts-with(normalize-space(.), 'Week')]",
@@ -111,7 +111,7 @@ try:
     # 获取所有讲座链接
     print("所有Week按钮已被点击")
     page.wait.eles_loaded("xpath://a[contains(text(), 'Lecture') and contains(@href, 'blackboard.com')]", timeout=10)
-    lecture_links = page.eles("xpath://a[contains(text(), 'Lecture') and contains(@href, 'blackboard.com')]")
+    lecture_links = page.eles("xpath://a[contains(text(), 'lecture') and contains(@href, 'blackboard.com')]")
     lecture_urls = [link.attr('href') for link in lecture_links]
     print(f"找到 {len(lecture_urls)} 个讲座链接")
     a = int(input("请输入您要开始下载的讲座的序号: "))
@@ -124,7 +124,7 @@ try:
                                 timeout=10)
         # 检查是否存在直接下载按钮
         direct_download_button = page.ele('xpath://button[@aria-label="Download" and @title="Download"]', timeout=5)
-
+        print("检测到加载")
         if direct_download_button:
             # 如果存在直接下载按钮，点击它
             direct_download_button.click.to_download()
@@ -133,9 +133,7 @@ try:
             # 如果不存在直接下载按钮，执行原来的逻辑
             try:
                 # 等待第一个按钮出现并点击
-                wait_and_click(page,
-                               'xpath://svg[contains(@class, "MuiSvgIcon") and contains(@class, "ms-Button-icon")]',
-                               timeout=10)
+                wait_and_click(page, "css=div.ms-Button-flexContainer svg.MuiSvgIconroot-0-2-27")
                 print("展开下载选项")
 
                 # 尝试点击 "Download original file" 按钮
