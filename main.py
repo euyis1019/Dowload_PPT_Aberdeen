@@ -80,7 +80,8 @@ try:
     username, password = get_credentials()
 
     # 登录
-    page.get("https://abdn.blackboard.com/ultra/courses/_66734_1/outline")
+    website = input("请输入您要访问的网站: ") # 输入网址
+    page.get(website)
     page.wait.eles_loaded("#user_id")
     page.ele("#user_id").input(username)
     page.ele("#password").input(password)
@@ -90,7 +91,8 @@ try:
     page.wait.eles_loaded("xpath://button[matches(@id, 'folder-title-_.*_1') and contains(text(), 'Lectures')]", timeout=10)
     print("Lectureschuxinale")
     # 点击 "Lectures" 按钮
-    if not wait_and_click(page, '#folder-title-_4390020_1'):
+    lecture_id = input("请输入您要访问的讲座的ID: ")
+    if not wait_and_click(page, lecture_id):
         print("无法点击 Lectures 按钮")
     # 点击所有 "Week" 按钮
     page.wait.eles_loaded("xpath://button[contains(@id, 'folder-title-') and starts-with(normalize-space(.), 'Week')]",
