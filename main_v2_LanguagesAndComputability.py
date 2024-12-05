@@ -83,23 +83,23 @@ def scroll_to_bottom(page):
            break
        last_height = new_height
 
-@retry(stop_max_attempt_number=3, wait_exponential_multiplier=1000)
-def wait_and_click(page, selector, timeout=10, download=False):
-   """Wait for and click element"""
-   start_time = time.time()
-   while time.time() - start_time < timeout:
-       try:
-           ele = page.ele(selector, timeout=0.5)
-           if ele:
-               if download:
-                   ele.click.to_download()
-               else:
-                   ele.click()
-               return True
-       except Exception as e:
-           logger.debug(f"Click wait failed: {e}")
-           time.sleep(0.5)
-   raise TimeoutError(f"Button '{selector}' not found or clickable within {timeout} seconds")
+# @retry(stop_max_attempt_number=3, wait_exponential_multiplier=1000)
+# def wait_and_click(page, selector, timeout=10, download=False):
+#    """Wait for and click element"""
+#    start_time = time.time()
+#    while time.time() - start_time < timeout:
+#        try:
+#            ele = page.ele(selector, timeout=0.5)
+#            if ele:
+#                if download:
+#                    ele.click.to_download()
+#                else:
+#                    ele.click()
+#                return True
+#        except Exception as e:
+#            logger.debug(f"Click wait failed: {e}")
+#            time.sleep(0.5)
+#    raise TimeoutError(f"Button '{selector}' not found or clickable within {timeout} seconds")
 
 def get_week_content(page, week_button):
     """Get content links for each week"""
@@ -229,6 +229,33 @@ def click_download_button(page):
     except Exception as e:
         logger.error(f"Error in click_download_button: {e}")
         return False
+    
+def wait_and_click(page, selector, timeout=10, download=False, week_folder=None, title=None):
+    if not download:
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            try:
+                page.wait.eles_loaded(selector)
+                button = page.ele(selector, timeout=0.5)
+                button.click()
+                return True
+            except:
+                pass
+        raise TimeoutError(f"按钮 '{selector}' 在 {timeout} 秒内未出现或无法点击")
+    else:
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            try:
+                page.wait.eles_loaded(selector)
+                button = page.ele(selector, timeout=0.5)
+                button.click.to_download(folder=week_folder, rename=title)
+                return True
+            except:
+                pass
+        raise TimeoutError(f"按钮 '{selector}' 在 {timeout} 秒内未出现或无法点击")
+    
+
+
 def download_content(page, url, title, week_folder):
     """Download content from the page"""
     try:
@@ -236,21 +263,15 @@ def download_content(page, url, title, week_folder):
         time.sleep(2)
         
         # 等待页面加载 - 等待更多选项SVG图标出现
-        try:
-            svg_icon = page.wait.ele_displayed(
-                'xpath://svg[contains(@class, "MuiSvgIcon") and contains(@class, "ms-Button-icon")]',
-                timeout=10
-            )
-            logger.debug("Page loaded, SVG icon found")
-        except:
-            logger.warning(f"Page load timeout for: {title}")
-            return False
+        # 等待页面加载
+        page.wait.ele_displayed('xpath://svg[contains(@class, "MuiSvgIcon") and contains(@class, "ms-Button-icon")]',
+                                timeout=6)
 
         # 首先尝试直接下载按钮
         try:
-            direct_button = page.ele('button[title="Download"]', timeout=3)
+            direct_button = page.ele('xpath://button[@aria-label="Download"]', timeout=5)
             if direct_button:
-                direct_button.click.to_download()
+                direct_button.click()
                 logger.info(f"Successfully downloaded (direct): {title}")
                 time.sleep(2)
                 return True
@@ -260,26 +281,22 @@ def download_content(page, url, title, week_folder):
         # 如果没有直接下载按钮，尝试通过更多选项下载
         try:
             # 点击更多选项按钮
-            more_options = page.ele("css=div.ms-Button-flexContainer svg.MuiSvgIcon", timeout=3)
-            if more_options:
-                more_options.click()
-                time.sleep(1)
-                
-                # 点击"Download original file"选项
-                download_original = page.ele('xpath://span[text()="Download original file"]', timeout=3)
-                if download_original:
-                    download_original.click.to_download()
-                    logger.info(f"Successfully downloaded (menu): {title}")
-                    time.sleep(2)
-                    return True
-                else:
-                    logger.warning("Download original file option not found")
+            button = page.ele('css=button[class*="MuiButtonBase"][class*="MuiIconButton"]', timeout=5)
+            button.click()
+            print("展开下载选项")
+            ###button = page.wait.ele_displayed('css=button[data-analytics-id*="inlineRender.toggle"]', timeout=5)
+####button.click()
+
+            # 尝试点击 "Download original file" 按钮
+            button = page.ele('css=button[aria-label="Download"]', timeout=5)
+            button.click()
         except Exception as e:
-            logger.debug(f"Menu download failed: {str(e)}")
+            print(f"无法完成下载操作: {url}")
+            print(f"错误信息: {str(e)}")
 
         logger.warning(f"Failed to download: {title}")
         return False
-        
+    
     except Exception as e:
         logger.error(f"Download failed {title}: {e}")
         return False

@@ -144,12 +144,10 @@ try:
             except Exception as e:
                 print(f"无法完成下载操作: {link_url}")
                 print(f"错误信息: {str(e)}")
-
         # 等待下载完成
         time.sleep(3)
         print("完成")
         page.refresh()
-
 except Exception as e:
     print(f"发生错误: {str(e)}")
 
